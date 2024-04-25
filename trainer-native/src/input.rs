@@ -12,8 +12,8 @@ pub fn encode_point(input: &mut [f32; POINT_DIMS], i: f32, y: f32, x: f32) {
     encode_cos(&mut input[70..80], x);
 }
 
-pub fn encode_embedding(i: f32) -> i32 {
-    ((i * EMBEDDINGS as f32) as i32).min(EMBEDDINGS as i32 - 1)
+pub fn encode_embedding(i: f32) -> f32 {
+    (i * EMBEDDINGS as f32).min((EMBEDDINGS - 1) as f32)
 }
 
 pub fn encode_frame(points: &mut [[f32; POINT_DIMS]], width: usize, height: usize, time: f32) {

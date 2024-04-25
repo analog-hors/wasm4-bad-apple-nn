@@ -27,7 +27,7 @@ def init_native_lib(path: str):
     _LIB.encode_frame_embedding.argtypes = [
         ctypes.c_float,
     ]
-    _LIB.encode_frame_embedding.restype = ctypes.c_int32
+    _LIB.encode_frame_embedding.restype = ctypes.c_float
 
     _LIB.loader_new.argtypes = [
         ctypes.c_char_p,
@@ -38,7 +38,7 @@ def init_native_lib(path: str):
     _LIB.loader_fill_batch.argtypes = [
         ctypes.c_void_p,
         ctypes.POINTER(ctypes.c_float),
-        ctypes.POINTER(ctypes.c_int32),
+        ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint64,
     ]
@@ -66,7 +66,7 @@ def encode_frame_points(points: numpy.ndarray, width: int, height: int, frame: f
     points_ptr = ctypes.cast(points_c_array, ctypes.POINTER(ctypes.c_float))
     _LIB.encode_frame_points(points_ptr, width, height, frame)
 
-def encode_frame_embedding(frame: float) -> int:
+def encode_frame_embedding(frame: float) -> float:
     assert _LIB is not None
     return _LIB.encode_frame_embedding(frame)
 
@@ -89,7 +89,7 @@ class Loader:
         assert self._ptr
 
         assert points.dtype == ctypes.c_float
-        assert embeddings.dtype == ctypes.c_int32
+        assert embeddings.dtype == ctypes.c_float
         assert targets.dtype == ctypes.c_float
         assert len(points.shape) == 2 and points.shape[1] == point_dims()
         assert len(embeddings.shape) == 1
@@ -104,7 +104,7 @@ class Loader:
         _LIB.loader_fill_batch(
             self._ptr,
             ctypes.cast(points_c_array, ctypes.POINTER(ctypes.c_float)),
-            ctypes.cast(embeddings_c_array, ctypes.POINTER(ctypes.c_int32)),
+            ctypes.cast(embeddings_c_array, ctypes.POINTER(ctypes.c_float)),
             ctypes.cast(targets_c_array, ctypes.POINTER(ctypes.c_float)),
             batch_size,
         )

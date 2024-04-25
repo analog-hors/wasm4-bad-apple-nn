@@ -27,7 +27,7 @@ pub unsafe extern "C" fn encode_frame_points(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn encode_frame_embedding(frame: f32) -> i32 {
+pub unsafe extern "C" fn encode_frame_embedding(frame: f32) -> f32 {
     input::encode_embedding(frame)
 }
 
@@ -47,7 +47,7 @@ pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Load
 pub unsafe extern "C" fn loader_fill_batch(
     loader: *mut Loader,
     points: *mut [f32; input::POINT_DIMS],
-    embeddings: *mut i32,
+    embeddings: *mut f32,
     targets: *mut f32,
     batch_size: u64,
 ) {

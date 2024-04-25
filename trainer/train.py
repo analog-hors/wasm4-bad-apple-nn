@@ -15,10 +15,6 @@ SEED = 0xd9e
 torch.manual_seed(SEED)
 batch_loader = BatchLoader(FRAMES_DIR, SEED, BATCH_SIZE)
 
-# points, embeddings, targets = batch_loader.load_batch(DEVICE)
-# print(embeddings)
-
-
 model = Model().to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr = 0.001)
 loss_fn = lambda o, t: torch.mean(torch.abs(o - t) ** 2.2)

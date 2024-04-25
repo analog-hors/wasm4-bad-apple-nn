@@ -45,7 +45,7 @@ impl Loader {
     pub fn fill_batch(
         &mut self,
         points: &mut [[f32; input::POINT_DIMS]],
-        embeddings: &mut [i32],
+        embeddings: &mut [f32],
         targets: &mut [f32],
     ) {
         for ((point, embedding), target) in points.iter_mut().zip(embeddings).zip(targets) {
