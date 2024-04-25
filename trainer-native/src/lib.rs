@@ -1,8 +1,14 @@
 use std::ffi::{CStr, c_char};
 
+mod input;
 mod loader;
 
 use loader::Loader;
+
+#[no_mangle]
+pub unsafe extern "C" fn point_dims() -> u64 {
+    input::POINT_DIMS as u64
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Loader {
@@ -17,14 +23,9 @@ pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Load
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn loader_point_dims() -> u64 {
-    Loader::POINT_DIMS as u64
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn loader_fill_batch(
     loader: *mut Loader,
-    points: *mut [f32; Loader::POINT_DIMS],
+    points: *mut [f32; input::POINT_DIMS],
     targets: *mut f32,
     batch_size: u64,
 ) {

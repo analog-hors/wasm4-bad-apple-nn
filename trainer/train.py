@@ -1,6 +1,7 @@
 import torch
-import native
-from batch_loader import BatchLoader
+import trainlib.native as native
+from trainlib.batch_loader import BatchLoader
+from trainlib.model import Model
 
 native.init_native_lib("target/release/libtrainer_native.so")
 
@@ -10,23 +11,6 @@ BATCH_SIZE = 2 ** 18
 BATCHES = 5000
 LOG_INTERVAL = 100
 SEED = 0xd9e
-
-class Model(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        point_dims = native.Loader.point_dims()
-        self.l0 = torch.nn.Linear(point_dims, 64)
-        self.l1 = torch.nn.Linear(64, 64)
-        self.l2 = torch.nn.Linear(64, 1)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.l0(x)
-        x = torch.nn.functional.mish(x)
-        x = self.l1(x)
-        x = torch.nn.functional.mish(x)
-        x = self.l2(x)
-        x = torch.nn.functional.sigmoid(x)
-        return x
 
 torch.manual_seed(SEED)
 batch_loader = BatchLoader(FRAMES_DIR, SEED, BATCH_SIZE)

@@ -10,14 +10,14 @@ def init_native_lib(path: str):
     
     _LIB = ctypes.cdll.LoadLibrary(path)
 
+    _LIB.point_dims.argtypes = []
+    _LIB.point_dims.restype = ctypes.c_uint64
+
     _LIB.loader_new.argtypes = [
         ctypes.c_char_p,
         ctypes.c_uint64,
     ]
     _LIB.loader_new.restype = ctypes.c_void_p
-
-    _LIB.loader_point_dims.argtypes = []
-    _LIB.loader_point_dims.restype = ctypes.c_uint64
 
     _LIB.loader_fill_batch.argtypes = [
         ctypes.c_void_p,
@@ -32,6 +32,10 @@ def init_native_lib(path: str):
     ]
     _LIB.loader_drop.restype = None
 
+def point_dims() -> int:
+    assert _LIB is not None
+    return _LIB.point_dims()
+
 class Loader:
     _ptr: ctypes.c_void_p
 
@@ -41,19 +45,13 @@ class Loader:
         if not self._ptr:
             raise ValueError("Failed to create new Loader")
 
-    @staticmethod
-    def point_dims():
-        assert _LIB is not None
-        return _LIB.loader_point_dims()
-
     def fill_batch(self, points: numpy.ndarray, targets: numpy.ndarray):
         assert _LIB is not None
         assert self._ptr
 
-        point_dims = Loader.point_dims()
         assert points.dtype == ctypes.c_float
         assert targets.dtype == ctypes.c_float
-        assert len(points.shape) == 2 and points.shape[1] == point_dims
+        assert len(points.shape) == 2 and points.shape[1] == point_dims()
         assert len(targets.shape) == 2 and targets.shape[1] == 1
         assert points.shape[0] == targets.shape[0]
 
