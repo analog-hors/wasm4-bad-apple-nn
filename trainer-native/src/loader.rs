@@ -19,7 +19,7 @@ pub struct Loader {
 }
 
 impl Loader {
-    pub const POINT_DIMS: usize = 3;
+    pub const POINT_DIMS: usize = 80;
 
     pub fn new(path: impl AsRef<Path>, seed: u64) -> Result<Self, LoaderError> {
         let mut images = Vec::new();
@@ -48,13 +48,33 @@ impl Loader {
             let y = self.rng.gen_range(0..self.images[i].height());
             let x = self.rng.gen_range(0..self.images[i].width());
 
+            let ir = i as f32 / (self.images.len() - 1) as f32;
+            let yr = y as f32 / (self.images[i].height() - 1) as f32;
+            let xr = x as f32 / (self.images[i].width() - 1) as f32;
+
+            encode_sin(&mut point[ 0..20], ir);
+            encode_cos(&mut point[20..40], ir);
+            encode_sin(&mut point[40..50], yr);
+            encode_cos(&mut point[50..60], yr);
+            encode_sin(&mut point[60..70], xr);
+            encode_cos(&mut point[70..80], xr);
+
             let pixel = self.images[i].get_pixel(x, y).0[0];
-            *point = [
-                i as f32 / self.images.len() as f32,
-                y as f32 / self.images[i].height() as f32,
-                x as f32 / self.images[i].width() as f32,
-            ];
             *target = pixel as f32 / 255.0;
         }
+    }
+}
+
+fn encode_sin(input: &mut [f32], n: f32) {
+    use std::f32::consts::PI;
+    for (i, x) in input.iter_mut().enumerate() {
+        *x = ((n - 0.5) * PI * (1 << i) as f32).sin();
+    }
+}
+
+fn encode_cos(input: &mut [f32], n: f32) {
+    use std::f32::consts::PI;
+    for (i, x) in input.iter_mut().enumerate() {
+        *x = ((n - 0.5) * PI * (1 << i) as f32).cos();
     }
 }

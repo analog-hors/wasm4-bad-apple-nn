@@ -7,7 +7,7 @@ native.init_native_lib("target/release/libtrainer_native.so")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 FRAMES_DIR = "frames/"
 BATCH_SIZE = 2 ** 18
-BATCHES = 10000
+BATCHES = 5000
 LOG_INTERVAL = 100
 SEED = 0xd9e
 
