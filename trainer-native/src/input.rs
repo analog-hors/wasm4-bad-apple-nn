@@ -11,6 +11,17 @@ pub fn encode_sample(input: &mut [f32; POINT_DIMS], i: f32, y: f32, x: f32) {
     encode_cos(&mut input[70..80], x);
 }
 
+pub fn encode_frame(points: &mut [[f32; POINT_DIMS]], width: usize, height: usize, time: f32) {
+    assert_eq!(points.len(), width * height);
+    for y in 0..height {
+        for x in 0..width {
+            let yr = y as f32 / (height - 1) as f32;
+            let xr = x as f32 / (width - 1) as f32;
+            encode_sample(&mut points[y * width + x], time, yr, xr);
+        }
+    }
+}
+
 fn encode_sin(input: &mut [f32], n: f32) {
     for (i, x) in input.iter_mut().enumerate() {
         *x = ((n - 0.5) * PI * (1 << i) as f32).sin();

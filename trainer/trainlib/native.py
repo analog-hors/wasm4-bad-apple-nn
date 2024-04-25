@@ -13,6 +13,14 @@ def init_native_lib(path: str):
     _LIB.point_dims.argtypes = []
     _LIB.point_dims.restype = ctypes.c_uint64
 
+    _LIB.encode_frame_points.argtypes = [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_float,
+    ]
+    _LIB.encode_frame_points.restype = None
+
     _LIB.loader_new.argtypes = [
         ctypes.c_char_p,
         ctypes.c_uint64,
@@ -35,6 +43,15 @@ def init_native_lib(path: str):
 def point_dims() -> int:
     assert _LIB is not None
     return _LIB.point_dims()
+
+def encode_frame_points(points: numpy.ndarray, width: int, height: int, frame: float):
+    assert _LIB is not None
+    assert width >= 0 and height >= 0
+    assert points.dtype == ctypes.c_float
+    assert points.shape == (width * height, point_dims())
+    points_c_array = numpy.ctypeslib.as_ctypes(points)
+    points_ptr = ctypes.cast(points_c_array, ctypes.POINTER(ctypes.c_float))
+    _LIB.encode_frame_points(points_ptr, width, height, frame)
 
 class Loader:
     _ptr: ctypes.c_void_p

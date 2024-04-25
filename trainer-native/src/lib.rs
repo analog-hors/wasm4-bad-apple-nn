@@ -11,6 +11,17 @@ pub unsafe extern "C" fn point_dims() -> u64 {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn encode_frame_points(
+    points: *mut [f32; input::POINT_DIMS],
+    width: u32,
+    height: u32,
+    frame: f32,
+) {
+    let points = std::slice::from_raw_parts_mut(points, width as usize * height as usize);
+    input::encode_frame(points, width as usize, height as usize, frame);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Loader {
     let path = CStr::from_ptr(path);
     let Ok(path) = path.to_str() else {
