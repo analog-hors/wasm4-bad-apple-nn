@@ -42,8 +42,13 @@ impl Loader {
         Ok(Loader { images, rng })
     }
 
-    pub fn fill_batch(&mut self, points: &mut [[f32; input::POINT_DIMS]], targets: &mut [f32]) {
-        for (point, target) in points.iter_mut().zip(targets) {
+    pub fn fill_batch(
+        &mut self,
+        points: &mut [[f32; input::POINT_DIMS]],
+        embeddings: &mut [i32],
+        targets: &mut [f32],
+    ) {
+        for ((point, embedding), target) in points.iter_mut().zip(embeddings).zip(targets) {
             let i = self.rng.gen_range(0..self.images.len());
             let y = self.rng.gen_range(0..self.images[i].height());
             let x = self.rng.gen_range(0..self.images[i].width());
@@ -51,7 +56,8 @@ impl Loader {
             let ir = i as f32 / (self.images.len() - 1) as f32;
             let yr = y as f32 / (self.images[i].height() - 1) as f32;
             let xr = x as f32 / (self.images[i].width() - 1) as f32;
-            input::encode_sample(point, ir, yr, xr);
+            input::encode_point(point, ir, yr, xr);
+            *embedding = input::encode_embedding(ir);
 
             let pixel = self.images[i].get_pixel(x, y).0[0];
             *target = pixel as f32 / 255.0;

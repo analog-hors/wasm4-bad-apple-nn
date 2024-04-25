@@ -22,6 +22,7 @@ image = Image.new("L", (FRAME_WIDTH, FRAME_HEIGHT))
 points = numpy.zeros((image.width * image.height, native.point_dims()), dtype=ctypes.c_float)
 for i in range(frames):
     native.encode_frame_points(points, image.width, image.height, i / (frames - 1))
-    decoded = model(torch.tensor(points))
+    embedding = native.encode_frame_embedding(i / (frames - 1))
+    decoded = model(torch.tensor(points), torch.full((points.shape[0],), embedding))
     image.frombytes(bytes(round(n.item() * 255) for n in decoded))
     image.save(os.path.join(DECODED_DIR, f"{i + 1:04}.png"))

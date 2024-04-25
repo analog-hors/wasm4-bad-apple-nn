@@ -15,6 +15,10 @@ SEED = 0xd9e
 torch.manual_seed(SEED)
 batch_loader = BatchLoader(FRAMES_DIR, SEED, BATCH_SIZE)
 
+# points, embeddings, targets = batch_loader.load_batch(DEVICE)
+# print(embeddings)
+
+
 model = Model().to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr = 0.001)
 loss_fn = lambda o, t: torch.mean(torch.abs(o - t) ** 2.2)
@@ -24,8 +28,8 @@ model.train()
 running_loss = 0
 running_count = 0
 for batch_index in range(BATCHES):
-    points, targets = batch_loader.load_batch(DEVICE)
-    outputs = model(points)
+    points, embeddings, targets = batch_loader.load_batch(DEVICE)
+    outputs = model(points, embeddings)
     loss = loss_fn(outputs, targets)
 
     optim.zero_grad()

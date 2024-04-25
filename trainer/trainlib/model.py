@@ -5,12 +5,15 @@ class Model(torch.nn.Module):
     def __init__(self):
         super().__init__()
         point_dims = native.point_dims()
-        self.l0 = torch.nn.Linear(point_dims, 64)
+        embeddings = native.embeddings()
+        self.em = torch.nn.Embedding(embeddings, 4)
+        self.l0 = torch.nn.Linear(point_dims + 4, 64)
         self.l1 = torch.nn.Linear(64, 64)
         self.l2 = torch.nn.Linear(64, 1)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.l0(x)
+    def forward(self, x: torch.Tensor, embeddings: torch.Tensor) -> torch.Tensor:
+        em1 = self.em(embeddings)
+        x = self.l0(torch.cat((x, em), dim=1))
         x = torch.nn.functional.mish(x)
         x = self.l1(x)
         x = torch.nn.functional.mish(x)
