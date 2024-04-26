@@ -7,8 +7,8 @@ native.init_native_lib("target/release/libtrainer_native.so")
 
 FRAMES_DIR = "frames/"
 DECODED_DIR = "decoded/"
-FRAME_WIDTH = 32
-FRAME_HEIGHT = 24
+FRAME_WIDTH = 80
+FRAME_HEIGHT = 60
 
 model = Model()
 model.load_state_dict(torch.load("model.bin"))

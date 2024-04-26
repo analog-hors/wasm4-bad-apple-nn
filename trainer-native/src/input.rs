@@ -1,15 +1,15 @@
 use std::f32::consts::PI;
 
-pub const POINT_DIMS: usize = 80;
+pub const POINT_DIMS: usize = (13 + 6 + 7) * 2;
 pub const EMBEDDINGS: usize = 820;
 
 pub fn encode_point(input: &mut [f32; POINT_DIMS], i: f32, y: f32, x: f32) {
-    encode_sin(&mut input[ 0..20], i);
-    encode_cos(&mut input[20..40], i);
-    encode_sin(&mut input[40..50], y);
-    encode_cos(&mut input[50..60], y);
-    encode_sin(&mut input[60..70], x);
-    encode_cos(&mut input[70..80], x);
+    encode_sin(&mut input[ 0..13], i);
+    encode_cos(&mut input[13..26], i);
+    encode_sin(&mut input[26..32], y);
+    encode_cos(&mut input[32..38], y);
+    encode_sin(&mut input[38..45], x);
+    encode_cos(&mut input[45..52], x);
 }
 
 pub fn encode_embedding(i: f32) -> f32 {
