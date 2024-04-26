@@ -36,7 +36,7 @@ impl Loader {
         files.sort();
         for file in files {
             let reader = ImageReader::open(file)?;
-            images.push(reader.decode()?.to_luma8());
+            images.push(reader.decode()?.into_luma8());
         }
 
         Ok(Loader { images, rng })
