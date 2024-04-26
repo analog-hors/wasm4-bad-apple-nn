@@ -6,10 +6,10 @@ class Model(torch.nn.Module):
         super().__init__()
         point_dims = native.point_dims()
         embeddings = native.embeddings()
-        self.em = torch.nn.Embedding(embeddings, 16)
-        self.l0 = torch.nn.Linear(point_dims + 16, 128)
-        self.l1 = torch.nn.Linear(128, 64)
-        self.l2 = torch.nn.Linear(64, 1)
+        self.em = torch.nn.Embedding(embeddings, 32)
+        self.l0 = torch.nn.Linear(point_dims + 32, 128)
+        self.l1 = torch.nn.Linear(128, 128)
+        self.l2 = torch.nn.Linear(128, 1)
 
     def forward(self, x: torch.Tensor, embeddings: torch.Tensor) -> torch.Tensor:
         em1 = embeddings.int()
