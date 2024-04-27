@@ -8,6 +8,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+input-encoding = { path = "../input-encoding" }
 image = { version = "0.25.1", default-features = false, features = ["png"] }
 rand = "0.8.5"
 rand_pcg = "0.3.1"

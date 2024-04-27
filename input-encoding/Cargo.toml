@@ -1,10 +1,8 @@
 [package]
-name = "bad-apple"
+name = "input-encoding"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-input-encoding = { path = "../input-encoding" }
-bytemuck = { version = "1.14.0", features = ["min_const_generics"] }

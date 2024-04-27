@@ -5,8 +5,6 @@ use rand::{Rng, SeedableRng};
 use rand_pcg::Mcg128Xsl64;
 use thiserror::Error;
 
-use super::input;
-
 #[derive(Debug, Error)]
 pub enum LoaderError {
     #[error("io error: {0}")]
@@ -44,7 +42,7 @@ impl Loader {
 
     pub fn fill_batch(
         &mut self,
-        points: &mut [[f32; input::POINT_DIMS]],
+        points: &mut [[f32; input_encoding::POINT_DIMS]],
         embeddings: &mut [f32],
         targets: &mut [f32],
     ) {
@@ -56,8 +54,8 @@ impl Loader {
             let ir = i as f32 / (self.images.len() - 1) as f32;
             let yr = y as f32 / (self.images[i].height() - 1) as f32;
             let xr = x as f32 / (self.images[i].width() - 1) as f32;
-            input::encode_point(point, ir, yr, xr);
-            *embedding = input::encode_embedding(ir);
+            input_encoding::encode_point(point, ir, yr, xr);
+            *embedding = input_encoding::encode_embedding(ir);
 
             let pixel = self.images[i].get_pixel(x, y).0[0];
             *target = pixel as f32 / 255.0;

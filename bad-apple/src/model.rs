@@ -102,7 +102,8 @@ pub fn model(buffer: &mut [u8; DECODER_BUFFER_SIZE], i: f32, y: f32, x : f32) ->
 
     let output = LayerBuffer::<[f32; 1]>::new(buffer, &[1.0])
         .layer(|_, output: &mut [f32; 56 + 32]| {
-            encode_point(output, i, y, x);
+            let point = &mut bytemuck::cast_slice_mut::<_, [f32; 56]>(&mut output[..56])[0];
+            input_encoding::encode_point(point, i, y, x);
             for i in 0..32 {
                 output[56 + i] = em1[i] * (1.0 - res) + em2[i] * res;
             }
@@ -129,26 +130,3 @@ pub fn decoder_size() -> usize {
         + std::mem::size_of_val(&L1)
         + std::mem::size_of_val(&L2)
 }
-
-fn encode_point(input: &mut [f32], i: f32, y: f32, x: f32) {
-    encode_sin(&mut input[ 0..13], i);
-    encode_cos(&mut input[13..26], i);
-    encode_sin(&mut input[26..32], y);
-    encode_cos(&mut input[32..38], y);
-    encode_sin(&mut input[38..45], x);
-    encode_cos(&mut input[45..52], x);
-    input[52..56].fill(0.0);
-}
-
-fn encode_sin(input: &mut [f32], n: f32) {
-    for (i, x) in input.iter_mut().enumerate() {
-        *x = ((n - 0.5) * std::f32::consts::PI * (1 << i) as f32).sin();
-    }
-}
-
-fn encode_cos(input: &mut [f32], n: f32) {
-    for (i, x) in input.iter_mut().enumerate() {
-        *x = ((n - 0.5) * std::f32::consts::PI * (1 << i) as f32).cos();
-    }
-}
-

@@ -2,6 +2,7 @@
 members = [
     "bad-apple",
     "write-frames",
+    "input-encoding",
     "trainer-native",
 ]
 resolver = "2"

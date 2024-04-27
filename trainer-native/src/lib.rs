@@ -1,34 +1,33 @@
 use std::ffi::{CStr, c_char};
 
-mod input;
 mod loader;
 
 use loader::Loader;
 
 #[no_mangle]
 pub unsafe extern "C" fn point_dims() -> u64 {
-    input::POINT_DIMS as u64
+    input_encoding::POINT_DIMS as u64
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn embeddings() -> u64 {
-    input::EMBEDDINGS as u64
+    input_encoding::EMBEDDINGS as u64
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn encode_frame_points(
-    points: *mut [f32; input::POINT_DIMS],
+    points: *mut [f32; input_encoding::POINT_DIMS],
     width: u32,
     height: u32,
     frame: f32,
 ) {
     let points = std::slice::from_raw_parts_mut(points, width as usize * height as usize);
-    input::encode_frame(points, width as usize, height as usize, frame);
+    input_encoding::encode_frame(points, width as usize, height as usize, frame);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn encode_frame_embedding(frame: f32) -> f32 {
-    input::encode_embedding(frame)
+    input_encoding::encode_embedding(frame)
 }
 
 #[no_mangle]
@@ -46,7 +45,7 @@ pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Load
 #[no_mangle]
 pub unsafe extern "C" fn loader_fill_batch(
     loader: *mut Loader,
-    points: *mut [f32; input::POINT_DIMS],
+    points: *mut [f32; input_encoding::POINT_DIMS],
     embeddings: *mut f32,
     targets: *mut f32,
     batch_size: u64,
