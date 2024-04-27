@@ -2,13 +2,14 @@ import time, torch
 import trainlib.native as native
 from trainlib.batch_loader import BatchLoader
 from trainlib.model import Model
+from trainlib.quantize import clip_model
 
 native.init_native_lib("target/release/libtrainer_native.so")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 FRAMES_DIR = "frames/"
-BATCH_SIZE = 2 ** 18
-BATCHES = 20000
+BATCH_SIZE = 2 ** 16
+BATCHES = 320000
 LOG_INTERVAL = 100
 SEED = 0xd9e
 
@@ -32,6 +33,7 @@ for batch_index in range(BATCHES):
     optim.zero_grad()
     loss.backward()
     optim.step()
+    clip_model(model)
 
     running_loss += loss.item() * points.shape[0]
     running_count += points.shape[0]

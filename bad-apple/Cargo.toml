@@ -1,0 +1,10 @@
+[package]
+name = "bad-apple"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bytemuck = { version = "1.14.0", features = ["min_const_generics"] }
+half = { version = "2.3.1", features = ["bytemuck"] }

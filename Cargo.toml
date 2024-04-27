@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "bad-apple",
+    "write-frames",
     "trainer-native",
 ]
 resolver = "2"
