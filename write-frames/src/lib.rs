@@ -8,7 +8,6 @@ const HEIGHT: u32 = 120;
 #[no_mangle]
 pub extern "C" fn main() {
     log!("decoder size: {}", bad_apple::decoder_size());
-    let mut buffer = [0; bad_apple::DECODER_BUFFER_SIZE];
     let mut image = GrayImage::new(WIDTH, HEIGHT);
     for i in 0..FRAMES {
         let start = now();
@@ -17,7 +16,7 @@ pub extern "C" fn main() {
                 let ir = i as f32 / (FRAMES - 1) as f32;
                 let yr = y as f32 / (image.height() - 1) as f32;
                 let xr = x as f32 / (image.width() - 1) as f32;
-                let p = bad_apple::model(&mut buffer, ir, yr, xr);
+                let p = bad_apple::model(ir, yr, xr);
                 image.get_pixel_mut(x, y).0 = [(p * 255.0).round() as u8];
             }
         }

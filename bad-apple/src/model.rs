@@ -53,43 +53,26 @@ impl<const I: usize, const O: usize> Linear<I, O> {
 
 include!("../../model.rs");
 
-pub const DECODER_BUFFER_SIZE: usize = std::mem::size_of::<[f32; 1000]>();
+pub fn model(i: f32, y: f32, x : f32) -> f32 {
+    let mut input = [0.0; 56 + 32];
+    encode_input(i, y, x, &mut input);
 
-struct LayerBuffer<'b, I: Pod> {
-    buffer: &'b mut [u8],
-    _phantom: std::marker::PhantomData<I>,
+    let mut l0_output = [0.0; 128];
+    L0.forward(&mut input, &mut l0_output);
+    activation(mish, &mut l0_output);
+
+    let mut l1_output = [0.0; 128];
+    L1.forward(&mut l0_output, &mut l1_output);
+    activation(mish, &mut l1_output);
+
+    let mut l2_output = [0.0; 1];
+    L2.forward(&mut l1_output, &mut l2_output);
+    activation(sigmoid, &mut l2_output);
+
+    l2_output[0]
 }
 
-impl<'b, I: Pod> LayerBuffer<'b, I> {
-    fn new(buffer: &'b mut [u8], input: &I) -> Self {
-        let input = bytemuck::cast_slice(std::slice::from_ref(input));
-        buffer[..input.len()].copy_from_slice(input);
-        Self { buffer, _phantom: std::marker::PhantomData }
-    }
-
-    fn layer<O: Pod>(self, f: impl FnOnce(&mut I, &mut O)) -> LayerBuffer<'b, O> {
-        let input_size = std::mem::size_of::<I>();
-        let output_size = std::mem::size_of::<O>();
-
-        let (input, output) = self.buffer[..input_size + output_size].split_at_mut(input_size);
-        f(&mut bytemuck::cast_slice_mut(input)[0], &mut bytemuck::cast_slice_mut(output)[0]);
-        
-        self.buffer.copy_within(input_size..input_size + output_size, 0);
-        LayerBuffer { buffer: self.buffer, _phantom: std::marker::PhantomData }
-    }
-
-    fn finish(self) -> &'b I {
-        let input_size = std::mem::size_of::<I>();
-        let input = &mut self.buffer[..input_size];
-        &bytemuck::cast_slice(input)[0]
-    }
-}
-
-type L0Output = [f32; 128];
-type L1Output = [f32; 128];
-type L2Output = [f32; 1];
-
-pub fn model(buffer: &mut [u8; DECODER_BUFFER_SIZE], i: f32, y: f32, x : f32) -> f32 {
+fn encode_input(i: f32, y: f32, x : f32, output: &mut [f32; 56 + 32]) {
     let em1i = ((i * EM.weight.len() as f32) as usize).min(EM.weight.len() - 1);
     let em2i = (em1i + 1).min(EM.weight.len() - 1);
     let res = (i * EM.weight.len() as f32).fract();
@@ -100,28 +83,11 @@ pub fn model(buffer: &mut [u8; DECODER_BUFFER_SIZE], i: f32, y: f32, x : f32) ->
     let mut em2 = [0.0; 32];
     EM.forward(em2i, &mut em2);
 
-    let output = LayerBuffer::<[f32; 1]>::new(buffer, &[1.0])
-        .layer(|_, output: &mut [f32; 56 + 32]| {
-            let point = &mut bytemuck::cast_slice_mut::<_, [f32; 56]>(&mut output[..56])[0];
-            input_encoding::encode_point(point, i, y, x);
-            for i in 0..32 {
-                output[56 + i] = em1[i] * (1.0 - res) + em2[i] * res;
-            }
-        })
-        .layer(|input, output: &mut L0Output| {
-            L0.forward(input, output);
-            activation(mish, output);
-        })
-        .layer(|input, output: &mut L1Output| {
-            L1.forward(input, output);
-            activation(mish, output);        
-        })
-        .layer(|input, output: &mut L2Output| {
-            L2.forward(input, output);
-            activation(sigmoid, output);
-        })
-        .finish();
-    output[0]
+    let point = &mut bytemuck::cast_slice_mut::<_, [f32; 56]>(&mut output[..56])[0];
+    input_encoding::encode_point(point, i, y, x);
+    for i in 0..32 {
+        output[56 + i] = em1[i] * (1.0 - res) + em2[i] * res;
+    }
 }
 
 pub fn decoder_size() -> usize {
