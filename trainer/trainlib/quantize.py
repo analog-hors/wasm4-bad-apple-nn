@@ -2,7 +2,7 @@ import torch
 from trainlib.model import Model
 from typing import TextIO
 
-WEIGHT_CLIP_RANGE = 0.5
+WEIGHT_CLIP_RANGE = 1.0
 WEIGHT_QUANT_RANGE = 127
 BIAS_CLIP_RANGE = 1.0
 BIAS_QUANT_RANGE = 127

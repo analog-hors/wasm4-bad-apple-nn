@@ -18,9 +18,9 @@ class Model(torch.nn.Module):
         em = torch.lerp(self.em(em1), self.em(em2), res)
 
         x = self.l0(torch.cat((x, em), dim=1))
-        x = torch.nn.functional.mish(x)
+        x = torch.clamp(x, 0, 1)
         x = self.l1(x)
-        x = torch.nn.functional.mish(x)
+        x = torch.clamp(x, 0, 1)
         x = self.l2(x)
         x = torch.nn.functional.sigmoid(x)
         return x

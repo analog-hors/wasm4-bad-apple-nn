@@ -1,21 +1,10 @@
-use bytemuck::Pod;
+const BS: f32 = BIAS_QUANT_RANGE / BIAS_CLIP_RANGE;
+const WS: f32 = WEIGHT_QUANT_RANGE / WEIGHT_CLIP_RANGE;
 
-fn view_flat_mut<T: Pod, U: Pod>(t: &mut T) -> &mut [U] {
-    bytemuck::cast_slice_mut(std::slice::from_mut(t))
-}
-
-fn activation<T: Pod>(f: impl Fn(f32) -> f32, t: &mut T) {
-    for n in view_flat_mut::<_, f32>(t) {
-        *n = f(*n);
+fn mish<const LEN: usize>(input: &[i32; LEN], output: &mut [i8; LEN]) {
+    for (o, i) in output.iter_mut().zip(input) {
+        *o = (*i as f32 / WS).clamp(0.0, 127.0) as i8;
     }
-}
-
-fn softplus(n: f32) -> f32 {
-    (1.0 + n.exp()).ln()
-}
-
-fn mish(n: f32) -> f32 {
-    n * softplus(n).tanh()
 }
 
 fn sigmoid(n: f32) -> f32 {
@@ -40,12 +29,11 @@ pub struct Linear<const I: usize, const O: usize> {
 }
 
 impl<const I: usize, const O: usize> Linear<I, O> {
-    fn forward(&self, input: &[f32; I], output: &mut [f32; O]) {
+    fn forward(&self, input: &[i8; I], output: &mut [i32; O]) {
         for o in 0..O {
-            output[o] = self.bias[o] as f32 / BIAS_QUANT_RANGE * BIAS_CLIP_RANGE;
+            output[o] = (self.bias[o] as f32 / BS * WS * WS).round() as i32;
             for i in 0..I {
-                let w = self.weight[o][i] as f32 / WEIGHT_QUANT_RANGE * WEIGHT_CLIP_RANGE;
-                output[o] += w * input[i];
+                output[o] += input[i] as i32 * self.weight[o][i] as i32;
             }
         }
     }
@@ -57,19 +45,27 @@ pub fn model(i: f32, y: f32, x : f32) -> f32 {
     let mut input = [0.0; 56 + 32];
     encode_input(i, y, x, &mut input);
 
-    let mut l0_output = [0.0; 128];
-    L0.forward(&mut input, &mut l0_output);
-    activation(mish, &mut l0_output);
+    let mut input_c = [0; 56 + 32];
+    for (o, i) in input_c.iter_mut().zip(&input) {
+        *o = ((i * WS).round() as i32).clamp(-127, 127) as i8;
+    }
 
-    let mut l1_output = [0.0; 128];
-    L1.forward(&mut l0_output, &mut l1_output);
-    activation(mish, &mut l1_output);
+    let mut l0_output = [0; 128];
+    L0.forward(&input_c, &mut l0_output);
 
-    let mut l2_output = [0.0; 1];
-    L2.forward(&mut l1_output, &mut l2_output);
-    activation(sigmoid, &mut l2_output);
+    let mut l0_output_c = [0; 128];
+    mish(&l0_output, &mut l0_output_c);
 
-    l2_output[0]
+    let mut l1_output = [0; 128];
+    L1.forward(&l0_output_c, &mut l1_output);
+    
+    let mut l1_output_c = [0; 128];
+    mish(&l1_output, &mut l1_output_c);
+
+    let mut l2_output = [0; 1];
+    L2.forward(&l1_output_c, &mut l2_output);
+
+    sigmoid(l2_output[0] as f32 / WS / WS)
 }
 
 fn encode_input(i: f32, y: f32, x : f32, output: &mut [f32; 56 + 32]) {
