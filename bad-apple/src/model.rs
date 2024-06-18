@@ -1,9 +1,6 @@
-const IS: f32 = INPUT_SCALE as f32;
-const WS: f32 = WEIGHT_SCALE as f32;
-
 fn mish<const LEN: usize>(input: &[i32; LEN], output: &mut [i8; LEN]) {
     for (o, i) in output.iter_mut().zip(input) {
-        *o = (*i as f32 / WS).clamp(0.0, 127.0) as i8;
+        *o = (*i / WEIGHT_SCALE as i32).clamp(0, INPUT_SCALE as i32) as i8;
     }
 }
 
@@ -18,7 +15,7 @@ pub struct Embedding<const I: usize, const O: usize> {
 impl<const I: usize, const O: usize> Embedding<I, O> {
     fn forward(&self, input: usize, output: &mut [f32; O]) {
         for o in 0..O {
-            output[o] = self.weight[input][o] as f32 / WS;
+            output[o] = self.weight[input][o] as f32 / WEIGHT_SCALE as f32;
         }
     }
 }
@@ -30,8 +27,8 @@ pub struct Linear<const I: usize, const O: usize> {
 
 impl<const I: usize, const O: usize> Linear<I, O> {
     fn forward(&self, input: &[i8; I], output: &mut [i32; O]) {
+        *output = self.bias;
         for o in 0..O {
-            output[o] = self.bias[o];
             for i in 0..I {
                 output[o] += input[i] as i32 * self.weight[o][i] as i32;
             }
@@ -47,7 +44,7 @@ pub fn model(i: f32, y: f32, x : f32) -> f32 {
 
     let mut input_c = [0; 56 + 32];
     for (o, i) in input_c.iter_mut().zip(&input) {
-        *o = ((i * IS).round() as i32).clamp(-127, 127) as i8;
+        *o = ((i * INPUT_SCALE as f32).round() as i32).clamp(-127, 127) as i8;
     }
 
     let mut l0_output = [0; 128];
@@ -65,7 +62,7 @@ pub fn model(i: f32, y: f32, x : f32) -> f32 {
     let mut l2_output = [0; 1];
     L2.forward(&l1_output_c, &mut l2_output);
 
-    sigmoid(l2_output[0] as f32 / IS / WS)
+    sigmoid(l2_output[0] as f32 / (INPUT_SCALE as i32 * WEIGHT_SCALE as i32) as f32)
 }
 
 fn encode_input(i: f32, y: f32, x : f32, output: &mut [f32; 56 + 32]) {
