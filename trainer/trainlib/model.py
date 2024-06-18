@@ -1,6 +1,9 @@
 import torch
 import trainlib.native as native
 
+INPUT_RANGE = 1.0
+WEIGHT_RANGE = 1.0
+
 class Model(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -18,9 +21,18 @@ class Model(torch.nn.Module):
         em = torch.lerp(self.em(em1), self.em(em2), res)
 
         x = self.l0(torch.cat((x, em), dim=1))
-        x = torch.clamp(x, 0, 1)
+        x = torch.clamp(x, 0, INPUT_RANGE)
         x = self.l1(x)
-        x = torch.clamp(x, 0, 1)
+        x = torch.clamp(x, 0, INPUT_RANGE)
         x = self.l2(x)
         x = torch.nn.functional.sigmoid(x)
         return x
+
+    def clip(self):
+        self.apply(_clipper)
+
+def _clipper(module: torch.nn.Module):
+    if hasattr(module, "weight"):
+        w = module.weight.data
+        w = w.clamp(-WEIGHT_RANGE, WEIGHT_RANGE)
+        module.weight.data = w

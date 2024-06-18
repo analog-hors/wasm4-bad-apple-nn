@@ -2,7 +2,6 @@ import time, torch
 import trainlib.native as native
 from trainlib.batch_loader import BatchLoader
 from trainlib.model import Model
-from trainlib.quantize import clip_model
 
 native.init_native_lib("target/release/libtrainer_native.so")
 
@@ -33,7 +32,7 @@ for batch_index in range(BATCHES):
     optim.zero_grad()
     loss.backward()
     optim.step()
-    clip_model(model)
+    model.clip()
 
     running_loss += loss.item() * points.shape[0]
     running_count += points.shape[0]
