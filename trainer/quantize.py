@@ -1,5 +1,4 @@
-import os, numpy, torch, ctypes
-from PIL import Image
+import torch
 import trainlib.native as native
 from trainlib.model import Model
 from trainlib.quantize import quantize
