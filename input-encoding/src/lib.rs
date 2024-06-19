@@ -1,7 +1,5 @@
-use std::f32::consts::PI;
-
 pub const POINT_DIMS: usize = (13 + 7 + 8) * 2;
-pub const EMBEDDINGS: usize = 657;
+pub const EMBEDDINGS: usize = 820;
 
 pub fn encode_point(input: &mut [f32; POINT_DIMS], t: f32, y: f32, x: f32) {
     encode_sin(&mut input[ 0..13], t);
@@ -29,12 +27,21 @@ pub fn encode_frame(points: &mut [[f32; POINT_DIMS]], width: usize, height: usiz
 
 fn encode_sin(input: &mut [f32], n: f32) {
     for (i, x) in input.iter_mut().enumerate() {
-        *x = ((n - 0.5) * PI * (1 << i) as f32).sin();
+        *x = sin_pi_approx((n - 0.5) * (1 << i) as f32);
     }
 }
 
 fn encode_cos(input: &mut [f32], n: f32) {
     for (i, x) in input.iter_mut().enumerate() {
-        *x = ((n - 0.5) * PI * (1 << i) as f32).cos();
+        *x = cos_pi_approx((n - 0.5) * (1 << i) as f32);
     }
+}
+
+fn sin_pi_approx(x: f32) -> f32 {
+    cos_pi_approx(x - 0.5)
+}
+
+fn cos_pi_approx(x: f32) -> f32 {
+    let x = (x.rem_euclid(2.0) - 1.0).abs();
+    -4.0 * x * x * x + 6.0 * x * x - 1.0
 }
