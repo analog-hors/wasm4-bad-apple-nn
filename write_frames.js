@@ -8,7 +8,7 @@ function buildModule() {
             "build",
             "-p", "write-frames",
             "--release",
-            "--target", "wasm32-unknown-unknown",
+            "--config", "write_frames_config.toml",
         ],
         { stdio: "inherit" },
     );
