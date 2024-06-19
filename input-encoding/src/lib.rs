@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 pub const POINT_DIMS: usize = (13 + 7 + 8) * 2;
-pub const EMBEDDINGS: usize = 820;
+pub const EMBEDDINGS: usize = 657;
 
 pub fn encode_point(input: &mut [f32; POINT_DIMS], t: f32, y: f32, x: f32) {
     encode_sin(&mut input[ 0..13], t);

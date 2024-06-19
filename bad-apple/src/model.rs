@@ -53,10 +53,10 @@ pub fn model(i: f32, y: f32, x : f32) -> f32 {
     let mut l0_output_c = [0; 128];
     mish(&l0_output, &mut l0_output_c);
 
-    let mut l1_output = [0; 128];
+    let mut l1_output = [0; 96];
     L1.forward(&l0_output_c, &mut l1_output);
     
-    let mut l1_output_c = [0; 128];
+    let mut l1_output_c = [0; 96];
     mish(&l1_output, &mut l1_output_c);
 
     let mut l2_output = [0; 1];
