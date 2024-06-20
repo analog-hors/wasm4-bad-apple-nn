@@ -40,7 +40,7 @@ def quantize(model: Model, out: TextIO):
 
     def write_linear(name: str, l: torch.nn.Linear):
         struct = struct_str("Linear", {
-            "weight": quantized_weight_str(l.weight),
+            "weight": quantized_weight_str(l.weight.T),
             "bias": quantized_bias_str(l.bias),
         })
         type = type_str("Linear", [

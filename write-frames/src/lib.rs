@@ -11,12 +11,17 @@ pub extern "C" fn main() {
     let mut image = GrayImage::new(WIDTH, HEIGHT);
     for i in 0..FRAMES {
         let start = now();
+
+        let mut acc = [0; 128];
+        bad_apple::init_accumulator(&mut acc);
+        bad_apple::add_time_features(i as f32 / (FRAMES - 1) as f32, &mut acc);
         for y in 0..image.height() {
+            let mut acc = acc;
+            bad_apple::add_y_features(y as f32 / (image.height() - 1) as f32, &mut acc);
             for x in 0..image.width() {
-                let ir = i as f32 / (FRAMES - 1) as f32;
-                let yr = y as f32 / (image.height() - 1) as f32;
-                let xr = x as f32 / (image.width() - 1) as f32;
-                let p = bad_apple::model(ir, yr, xr);
+                let mut acc = acc;
+                bad_apple::add_x_features(x as f32 / (image.width() - 1) as f32, &mut acc);
+                let p = bad_apple::decode(&acc);
                 image.get_pixel_mut(x, y).0 = [(p * 255.0).round() as u8];
             }
         }

@@ -1,13 +1,46 @@
-pub const POINT_DIMS: usize = (13 + 7 + 8) * 2;
+pub struct FeatureLayout {
+    pub offset: usize,
+    pub dims: usize,
+}
+
+macro_rules! point_layout {
+    ($($feature:ident: $dims:expr,)*) => {
+        point_layout!(@munch, 0 $(, ($feature, $dims))*);
+    };
+
+    (@munch, $offset:expr, ($feature:ident, $dims:expr) $($tail:tt)*) => {
+        pub const $feature: FeatureLayout = FeatureLayout {
+            offset: $offset,
+            dims: $dims,
+        };
+
+        point_layout!(@munch, $offset + $dims $($tail)*);
+    };
+
+    (@munch, $offset:expr) => {
+        pub const POINT_DIMS: usize = $offset;
+    };
+}
+
+point_layout! {
+    T_SIN_LAYOUT: 13,
+    T_COS_LAYOUT: 13,
+    Y_SIN_LAYOUT: 7,
+    Y_COS_LAYOUT: 7,
+    X_SIN_LAYOUT: 8,
+    X_COS_LAYOUT: 8,
+}
+
 pub const EMBEDDINGS: usize = 820;
 
 pub fn encode_point(input: &mut [f32; POINT_DIMS], t: f32, y: f32, x: f32) {
-    encode_sin(&mut input[ 0..13], t);
-    encode_cos(&mut input[13..26], t);
-    encode_sin(&mut input[26..33], y);
-    encode_cos(&mut input[33..40], y);
-    encode_sin(&mut input[40..48], x);
-    encode_cos(&mut input[48..56], x);
+    let range = |layout: FeatureLayout| layout.offset..layout.offset + layout.dims;
+    encode_sin(&mut input[range(T_SIN_LAYOUT)], t);
+    encode_cos(&mut input[range(T_COS_LAYOUT)], t);
+    encode_sin(&mut input[range(Y_SIN_LAYOUT)], y);
+    encode_cos(&mut input[range(Y_COS_LAYOUT)], y);
+    encode_sin(&mut input[range(X_SIN_LAYOUT)], x);
+    encode_cos(&mut input[range(X_COS_LAYOUT)], x);
 }
 
 pub fn encode_embedding(i: f32) -> f32 {
@@ -25,13 +58,13 @@ pub fn encode_frame(points: &mut [[f32; POINT_DIMS]], width: usize, height: usiz
     }
 }
 
-fn encode_sin(input: &mut [f32], n: f32) {
+pub fn encode_sin(input: &mut [f32], n: f32) {
     for (i, x) in input.iter_mut().enumerate() {
         *x = sin_pi_approx((n - 0.5) * (1 << i) as f32);
     }
 }
 
-fn encode_cos(input: &mut [f32], n: f32) {
+pub fn encode_cos(input: &mut [f32], n: f32) {
     for (i, x) in input.iter_mut().enumerate() {
         *x = cos_pi_approx((n - 0.5) * (1 << i) as f32);
     }
