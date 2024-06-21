@@ -1,6 +1,6 @@
 use std::path::Path;
-use std::sync::Mutex;
 use std::sync::mpsc::{sync_channel, Receiver};
+use rayon::prelude::*;
 use image::GrayImage;
 use image::io::Reader as ImageReader;
 use rand::{Rng, SeedableRng};
@@ -65,34 +65,22 @@ fn make_batch(images: &[GrayImage], rng: &mut Mcg128Xsl64, batch_size: usize) ->
     let mut embeddings = vec![0.0; batch_size];
     let mut targets = vec![0.0; batch_size];
 
-    let mut samples = points.iter_mut().zip(&mut embeddings).zip(&mut targets);
-    let jobs = Mutex::new(std::iter::from_fn(move || {
-        let ((point, embedding), target) = samples.next()?;
+    let mut jobs = Vec::with_capacity(batch_size);
+    for ((point, embedding), target) in points.iter_mut().zip(&mut embeddings).zip(&mut targets) {
         let t = rng.gen_range(0..images.len());
         let y = rng.gen_range(0..images[t].height());
         let x = rng.gen_range(0..images[t].width());
-        Some(((t, y, x), (point, embedding, target)))
-    }));
+        jobs.push(((t, y, x), (point, embedding, target)));
+    }
+    jobs.into_par_iter().for_each(|((t, y, x), (point, embedding, target))| {
+        let tr = t as f32 / (images.len() - 1) as f32;
+        let yr = y as f32 / (images[t].height() - 1) as f32;
+        let xr = x as f32 / (images[t].width() - 1) as f32;
+        input_encoding::encode_point(point, tr, yr, xr);
+        *embedding = input_encoding::encode_embedding(tr);
 
-    std::thread::scope(|scope| {
-        for _ in 0..4 {
-            scope.spawn(|| loop {
-                let Some(job) = jobs.lock().unwrap().next() else {
-                    break;
-                };
-
-                let ((t, y, x), (point, embedding, target)) = job;
-
-                let tr = t as f32 / (images.len() - 1) as f32;
-                let yr = y as f32 / (images[t].height() - 1) as f32;
-                let xr = x as f32 / (images[t].width() - 1) as f32;
-                input_encoding::encode_point(point, tr, yr, xr);
-                *embedding = input_encoding::encode_embedding(tr);
-        
-                let pixel = images[t].get_pixel(x, y).0[0];
-                *target = pixel as f32 / 255.0;
-            });
-        }
+        let pixel = images[t].get_pixel(x, y).0[0];
+        *target = pixel as f32 / 255.0;
     });
 
     Batch { points, embeddings, targets }
