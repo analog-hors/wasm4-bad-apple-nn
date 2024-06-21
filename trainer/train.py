@@ -13,7 +13,7 @@ LOG_INTERVAL = 100
 SEED = 0xd9e
 
 torch.manual_seed(SEED)
-batch_loader = BatchLoader(FRAMES_DIR, SEED, BATCH_SIZE)
+batch_loader = BatchLoader(FRAMES_DIR, BATCH_SIZE, SEED)
 
 model = Model().to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr = 0.001)

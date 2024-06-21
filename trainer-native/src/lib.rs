@@ -31,29 +31,28 @@ pub unsafe extern "C" fn encode_frame_embedding(frame: f32) -> f32 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn loader_new(path: *const c_char, seed: u64) -> *mut Loader {
+pub unsafe extern "C" fn loader_new(path: *const c_char, batch_size: u64, seed: u64) -> *mut Loader {
     let path = CStr::from_ptr(path);
     let Ok(path) = path.to_str() else {
         return std::ptr::null_mut();
     };
-    let Ok(loader) = Loader::new(path, seed) else {
+    let Ok(loader) = Loader::new(path, batch_size as usize, seed) else {
         return std::ptr::null_mut();
     };
     Box::into_raw(Box::new(loader))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn loader_fill_batch(
+pub unsafe extern "C" fn loader_next_batch(
     loader: *mut Loader,
     points: *mut [f32; input_encoding::POINT_DIMS],
     embeddings: *mut f32,
     targets: *mut f32,
-    batch_size: u64,
 ) {
-    let points = std::slice::from_raw_parts_mut(points, batch_size as usize);
-    let embeddings = std::slice::from_raw_parts_mut(embeddings, batch_size as usize);
-    let targets = std::slice::from_raw_parts_mut(targets, batch_size as usize);
-    (*loader).fill_batch(points, embeddings, targets);
+    let batch = (*loader).next_batch();
+    points.copy_from_nonoverlapping(batch.points.as_ptr(), batch.points.len());
+    embeddings.copy_from_nonoverlapping(batch.embeddings.as_ptr(), batch.embeddings.len());
+    targets.copy_from_nonoverlapping(batch.targets.as_ptr(), batch.targets.len());
 }
 
 #[no_mangle]

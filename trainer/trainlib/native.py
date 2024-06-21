@@ -32,17 +32,17 @@ def init_native_lib(path: str):
     _LIB.loader_new.argtypes = [
         ctypes.c_char_p,
         ctypes.c_uint64,
+        ctypes.c_uint64,
     ]
     _LIB.loader_new.restype = ctypes.c_void_p
 
-    _LIB.loader_fill_batch.argtypes = [
+    _LIB.loader_next_batch.argtypes = [
         ctypes.c_void_p,
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
-        ctypes.c_uint64,
     ]
-    _LIB.loader_fill_batch.restype = None
+    _LIB.loader_next_batch.restype = None
 
     _LIB.loader_drop.argtypes = [
         ctypes.c_void_p,
@@ -72,14 +72,17 @@ def encode_frame_embedding(frame: float) -> float:
 
 class Loader:
     _ptr: ctypes.c_void_p
+    _batch_size: int
 
-    def __init__(self, path: str, seed: int):
+    def __init__(self, path: str, batch_size: int, seed: int):
         assert _LIB is not None
-        self._ptr = _LIB.loader_new(path.encode("utf-8"), seed)
+        self._ptr = _LIB.loader_new(path.encode("utf-8"), batch_size, seed)
         if not self._ptr:
             raise ValueError("Failed to create new Loader")
 
-    def fill_batch(
+        self._batch_size = batch_size
+
+    def next_batch(
         self,
         points: numpy.ndarray,
         embeddings: numpy.ndarray,
@@ -94,19 +97,18 @@ class Loader:
         assert len(points.shape) == 2 and points.shape[1] == point_dims()
         assert len(embeddings.shape) == 1
         assert len(targets.shape) == 2 and targets.shape[1] == 1
-        assert points.shape[0] == targets.shape[0]
-        assert points.shape[0] == embeddings.shape[0]
+        assert points.shape[0] == self._batch_size
+        assert targets.shape[0] == self._batch_size
+        assert embeddings.shape[0] == self._batch_size
 
-        batch_size = points.shape[0]
         points_c_array = numpy.ctypeslib.as_ctypes(points)
         embeddings_c_array = numpy.ctypeslib.as_ctypes(embeddings)
         targets_c_array = numpy.ctypeslib.as_ctypes(targets)
-        _LIB.loader_fill_batch(
+        _LIB.loader_next_batch(
             self._ptr,
             ctypes.cast(points_c_array, ctypes.POINTER(ctypes.c_float)),
             ctypes.cast(embeddings_c_array, ctypes.POINTER(ctypes.c_float)),
             ctypes.cast(targets_c_array, ctypes.POINTER(ctypes.c_float)),
-            batch_size,
         )
 
     def __enter__(self):
