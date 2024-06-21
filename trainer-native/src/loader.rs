@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Mutex;
 use std::sync::mpsc::{sync_channel, Receiver};
 use image::GrayImage;
 use image::io::Reader as ImageReader;
@@ -43,10 +44,12 @@ impl Loader {
             images.push(reader.decode()?.into_luma8());
         }
 
-        let (send, recv) = sync_channel(1);
+        let (send, recv) = sync_channel(0);
         std::thread::spawn(move || loop {
             let batch = make_batch(&images, &mut rng, batch_size);
-            send.send(batch).unwrap();
+            if send.send(batch).is_err() {
+                break;
+            }
         });
 
         Ok(Loader { recv })
@@ -57,33 +60,40 @@ impl Loader {
     }
 }
 
-fn make_batch(images: &[GrayImage], rng: &mut impl Rng, batch_size: usize) -> Batch {
-    let mut batch = Batch {
-        points: Vec::with_capacity(batch_size),
-        embeddings: Vec::with_capacity(batch_size),
-        targets: Vec::with_capacity(batch_size),
-    };
+fn make_batch(images: &[GrayImage], rng: &mut Mcg128Xsl64, batch_size: usize) -> Batch {
+    let mut points = vec![[0.0; input_encoding::POINT_DIMS]; batch_size];
+    let mut embeddings = vec![0.0; batch_size];
+    let mut targets = vec![0.0; batch_size];
 
-    for _ in 0..batch_size {
-        let i = rng.gen_range(0..images.len());
-        let y = rng.gen_range(0..images[i].height());
-        let x = rng.gen_range(0..images[i].width());
+    let mut samples = points.iter_mut().zip(&mut embeddings).zip(&mut targets);
+    let jobs = Mutex::new(std::iter::from_fn(move || {
+        let ((point, embedding), target) = samples.next()?;
+        let t = rng.gen_range(0..images.len());
+        let y = rng.gen_range(0..images[t].height());
+        let x = rng.gen_range(0..images[t].width());
+        Some(((t, y, x), (point, embedding, target)))
+    }));
 
-        let mut point = [0.0; input_encoding::POINT_DIMS];
-        let ir = i as f32 / (images.len() - 1) as f32;
-        let yr = y as f32 / (images[i].height() - 1) as f32;
-        let xr = x as f32 / (images[i].width() - 1) as f32;
-        input_encoding::encode_point(&mut point, ir, yr, xr);
+    std::thread::scope(|scope| {
+        for _ in 0..4 {
+            scope.spawn(|| loop {
+                let Some(job) = jobs.lock().unwrap().next() else {
+                    break;
+                };
 
-        let embedding = input_encoding::encode_embedding(ir);
+                let ((t, y, x), (point, embedding, target)) = job;
 
-        let pixel = images[i].get_pixel(x, y).0[0];
-        let target = pixel as f32 / 255.0;
+                let tr = t as f32 / (images.len() - 1) as f32;
+                let yr = y as f32 / (images[t].height() - 1) as f32;
+                let xr = x as f32 / (images[t].width() - 1) as f32;
+                input_encoding::encode_point(point, tr, yr, xr);
+                *embedding = input_encoding::encode_embedding(tr);
+        
+                let pixel = images[t].get_pixel(x, y).0[0];
+                *target = pixel as f32 / 255.0;
+            });
+        }
+    });
 
-        batch.points.push(point);
-        batch.embeddings.push(embedding);
-        batch.targets.push(target);
-    }
-    
-    batch
+    Batch { points, embeddings, targets }
 }
