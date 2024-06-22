@@ -28,15 +28,15 @@ unsafe fn update() {
 
     let mut acc = [0; 128];
     bad_apple::init_accumulator(&mut acc);
-    bad_apple::add_time_features(FRAME as f32 / FRAME_COUNT as f32, &mut acc);
+    bad_apple::add_time_features(FRAME as f32 / (FRAME_COUNT - 1) as f32, &mut acc);
 
     for fby in (sy..120).step_by(2) {
         let mut acc = acc;
-        bad_apple::add_y_features(fby as f32 / 120.0, &mut acc);
+        bad_apple::add_y_features(fby as f32 / 119.0, &mut acc);
 
         for fbx in (sx..160).step_by(4) {
             let mut acc = acc;
-            bad_apple::add_x_features(fbx as f32 / 160.0, &mut acc);
+            bad_apple::add_x_features(fbx as f32 / 159.0, &mut acc);
 
             let index = (fby + 20) * 160 + fbx;
             let pixel = bad_apple::decode(&acc);
