@@ -23,8 +23,8 @@ macro_rules! point_layout {
 }
 
 point_layout! {
-    T_SIN_LAYOUT: 13,
-    T_COS_LAYOUT: 13,
+    T_SIN_LAYOUT: 4,
+    T_COS_LAYOUT: 4,
     Y_SIN_LAYOUT: 7,
     Y_COS_LAYOUT: 7,
     X_SIN_LAYOUT: 8,

@@ -101,10 +101,10 @@ pub fn decode(accumulator: &Accumulator) -> f32 {
     let mut l0_output_c = [0; 128];
     mish(accumulator, &mut l0_output_c);
 
-    let mut l1_output = [0; 96];
+    let mut l1_output = [0; 112];
     L1.forward(&l0_output_c, &mut l1_output);
     
-    let mut l1_output_c = [0; 96];
+    let mut l1_output_c = [0; 112];
     mish(&l1_output, &mut l1_output_c);
 
     let mut l2_output = [0; 1];

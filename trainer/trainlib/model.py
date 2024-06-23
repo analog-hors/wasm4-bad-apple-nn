@@ -11,8 +11,8 @@ class Model(torch.nn.Module):
         embeddings = native.embeddings()
         self.em = torch.nn.Embedding(embeddings, 32)
         self.l0 = torch.nn.Linear(point_dims + 32, 128)
-        self.l1 = torch.nn.Linear(128, 96)
-        self.l2 = torch.nn.Linear(96, 1)
+        self.l1 = torch.nn.Linear(128, 112)
+        self.l2 = torch.nn.Linear(112, 1)
 
     def forward(self, x: torch.Tensor, embeddings: torch.Tensor) -> torch.Tensor:
         em1 = embeddings.int()
