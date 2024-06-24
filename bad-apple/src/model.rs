@@ -62,7 +62,8 @@ pub fn init_accumulator(acc: &mut Accumulator) {
 pub fn add_time_features(t: f32, acc: &mut Accumulator) {
     add_sin_feature::<{T_SIN_LAYOUT.offset}, {T_SIN_LAYOUT.dims}>(t, acc);
     add_cos_feature::<{T_COS_LAYOUT.offset}, {T_COS_LAYOUT.dims}>(t, acc);
-    add_embedding(t, acc);
+    add_embedding_0(t, acc);
+    add_embedding_1(t, acc);
 }
 
 pub fn add_y_features(y: f32, acc: &mut Accumulator) {
@@ -75,36 +76,58 @@ pub fn add_x_features(x: f32, acc: &mut Accumulator) {
     add_cos_feature::<{X_COS_LAYOUT.offset}, {X_COS_LAYOUT.dims}>(x, acc);
 }
 
-fn add_embedding(t: f32, acc: &mut Accumulator) {
-    let em1_index = ((t * EM.weight.len() as f32) as usize).min(EM.weight.len() - 1);
-    let em2_index = (em1_index + 1).min(EM.weight.len() - 1);
-    let progress = (t * EM.weight.len() as f32).fract();
+fn add_embedding_0(t: f32, acc: &mut Accumulator) {
+    let em1_index = ((t * EM0.weight.len() as f32) as usize).min(EM0.weight.len() - 1);
+    let em2_index = (em1_index + 1).min(EM0.weight.len() - 1);
+    let progress = (t * EM0.weight.len() as f32).fract();
 
-    let mut em1 = [0.0; 32];
-    EM.forward(em1_index, &mut em1);
+    let mut em1 = [0.0; 20];
+    EM0.forward(em1_index, &mut em1);
 
-    let mut em2 = [0.0; 32];
-    EM.forward(em2_index, &mut em2);
+    let mut em2 = [0.0; 20];
+    EM0.forward(em2_index, &mut em2);
 
-    let mut em = [0.0; 32];
+    let mut em = [0.0; 20];
     for i in 0..em.len() {
         em[i] = em1[i] * (1.0 - progress) + em2[i] * progress;
     }
 
-    let mut em_scaled = [0; 32];
+    let mut em_scaled = [0; 20];
     scale_input(&em, &mut em_scaled);
 
     L0.partial_forward(POINT_DIMS, &em_scaled, acc);
+}
+
+fn add_embedding_1(t: f32, acc: &mut Accumulator) {
+    let em1_index = ((t * EM1.weight.len() as f32) as usize).min(EM1.weight.len() - 1);
+    let em2_index = (em1_index + 1).min(EM1.weight.len() - 1);
+    let progress = (t * EM1.weight.len() as f32).fract();
+
+    let mut em1 = [0.0; 44];
+    EM1.forward(em1_index, &mut em1);
+
+    let mut em2 = [0.0; 44];
+    EM1.forward(em2_index, &mut em2);
+
+    let mut em = [0.0; 44];
+    for i in 0..em.len() {
+        em[i] = em1[i] * (1.0 - progress) + em2[i] * progress;
+    }
+
+    let mut em_scaled = [0; 44];
+    scale_input(&em, &mut em_scaled);
+
+    L0.partial_forward(POINT_DIMS + 20, &em_scaled, acc);
 }
 
 pub fn decode(accumulator: &Accumulator) -> f32 {
     let mut l0_output_c = [0; 128];
     mish(accumulator, &mut l0_output_c);
 
-    let mut l1_output = [0; 112];
+    let mut l1_output = [0; 96];
     L1.forward(&l0_output_c, &mut l1_output);
     
-    let mut l1_output_c = [0; 112];
+    let mut l1_output_c = [0; 96];
     mish(&l1_output, &mut l1_output_c);
 
     let mut l2_output = [0; 1];
@@ -140,7 +163,8 @@ fn scale_input<const LEN: usize>(input: &[f32; LEN], output: &mut [i8; LEN]) {
 }
 
 pub fn decoder_size() -> usize {
-    std::mem::size_of_val(&EM)
+    std::mem::size_of_val(&EM0)
+        + std::mem::size_of_val(&EM1)
         + std::mem::size_of_val(&L0)
         + std::mem::size_of_val(&L1)
         + std::mem::size_of_val(&L2)

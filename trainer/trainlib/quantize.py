@@ -49,7 +49,8 @@ def quantize(model: Model, out: TextIO):
         ])
         out.write(f"pub static {name}: {type} = {struct};\n")
 
-    write_embeddding("EM", model.em)
+    write_embeddding("EM0", model.em0)
+    write_embeddding("EM1", model.em1)
     write_linear("L0", model.l0)
     write_linear("L1", model.l1)
     write_linear("L2", model.l2)
