@@ -9,7 +9,7 @@ use thiserror::Error;
 
 pub struct Batch {
     pub points: Vec<[f32; input_encoding::POINT_DIMS]>,
-    pub embeddings: Vec<f32>,
+    pub times: Vec<f32>,
     pub targets: Vec<f32>,
 }
 
@@ -62,26 +62,26 @@ impl Loader {
 
 fn make_batch(images: &[GrayImage], rng: &mut Mcg128Xsl64, batch_size: usize) -> Batch {
     let mut points = vec![[0.0; input_encoding::POINT_DIMS]; batch_size];
-    let mut embeddings = vec![0.0; batch_size];
+    let mut times = vec![0.0; batch_size];
     let mut targets = vec![0.0; batch_size];
 
     let mut jobs = Vec::with_capacity(batch_size);
-    for ((point, embedding), target) in points.iter_mut().zip(&mut embeddings).zip(&mut targets) {
+    for ((point, times), target) in points.iter_mut().zip(&mut times).zip(&mut targets) {
         let t = rng.gen_range(0..images.len());
         let y = rng.gen_range(0..images[t].height());
         let x = rng.gen_range(0..images[t].width());
-        jobs.push(((t, y, x), (point, embedding, target)));
+        jobs.push(((t, y, x), (point, times, target)));
     }
-    jobs.into_par_iter().for_each(|((t, y, x), (point, embedding, target))| {
+    jobs.into_par_iter().for_each(|((t, y, x), (point, time, target))| {
         let tr = t as f32 / (images.len() - 1) as f32;
         let yr = y as f32 / (images[t].height() - 1) as f32;
         let xr = x as f32 / (images[t].width() - 1) as f32;
-        input_encoding::encode_point(point, tr, yr, xr);
-        *embedding = input_encoding::encode_embedding(tr);
-
         let pixel = images[t].get_pixel(x, y).0[0];
-        *target = pixel as f32 / 255.0;
+
+        input_encoding::encode_point(point, tr, yr, xr);
+        *time = tr;
+        *target = pixel as f32 / u8::MAX as f32;
     });
 
-    Batch { points, embeddings, targets }
+    Batch { points, times, targets }
 }

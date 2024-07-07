@@ -31,8 +31,6 @@ point_layout! {
     X_COS_LAYOUT: 8,
 }
 
-pub const EMBEDDINGS: usize = 820;
-
 pub fn encode_point(input: &mut [f32; POINT_DIMS], t: f32, y: f32, x: f32) {
     let range = |layout: FeatureLayout| layout.offset..layout.offset + layout.dims;
     encode_sin(&mut input[range(T_SIN_LAYOUT)], t);
@@ -41,10 +39,6 @@ pub fn encode_point(input: &mut [f32; POINT_DIMS], t: f32, y: f32, x: f32) {
     encode_cos(&mut input[range(Y_COS_LAYOUT)], y);
     encode_sin(&mut input[range(X_SIN_LAYOUT)], x);
     encode_cos(&mut input[range(X_COS_LAYOUT)], x);
-}
-
-pub fn encode_embedding(i: f32) -> f32 {
-    (i * EMBEDDINGS as f32).min((EMBEDDINGS - 1) as f32)
 }
 
 pub fn encode_frame(points: &mut [[f32; POINT_DIMS]], width: usize, height: usize, time: f32) {

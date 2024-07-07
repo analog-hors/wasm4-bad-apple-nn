@@ -13,9 +13,6 @@ def init_native_lib(path: str):
     _LIB.point_dims.argtypes = []
     _LIB.point_dims.restype = ctypes.c_uint64
 
-    _LIB.embeddings.argtypes = []
-    _LIB.embeddings.restype = ctypes.c_uint64
-
     _LIB.encode_frame_points.argtypes = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint32,
@@ -23,11 +20,6 @@ def init_native_lib(path: str):
         ctypes.c_float,
     ]
     _LIB.encode_frame_points.restype = None
-
-    _LIB.encode_frame_embedding.argtypes = [
-        ctypes.c_float,
-    ]
-    _LIB.encode_frame_embedding.restype = ctypes.c_float
 
     _LIB.loader_new.argtypes = [
         ctypes.c_char_p,
@@ -52,10 +44,6 @@ def init_native_lib(path: str):
 def point_dims() -> int:
     assert _LIB is not None
     return _LIB.point_dims()
-
-def embeddings() -> int:
-    assert _LIB is not None
-    return _LIB.embeddings()
 
 def encode_frame_points(points: numpy.ndarray, width: int, height: int, frame: float):
     assert _LIB is not None
@@ -85,29 +73,29 @@ class Loader:
     def next_batch(
         self,
         points: numpy.ndarray,
-        embeddings: numpy.ndarray,
+        times: numpy.ndarray,
         targets: numpy.ndarray,
     ):
         assert _LIB is not None
         assert self._ptr
 
         assert points.dtype == ctypes.c_float
-        assert embeddings.dtype == ctypes.c_float
+        assert times.dtype == ctypes.c_float
         assert targets.dtype == ctypes.c_float
         assert len(points.shape) == 2 and points.shape[1] == point_dims()
-        assert len(embeddings.shape) == 1
+        assert len(times.shape) == 1
         assert len(targets.shape) == 2 and targets.shape[1] == 1
         assert points.shape[0] == self._batch_size
         assert targets.shape[0] == self._batch_size
-        assert embeddings.shape[0] == self._batch_size
+        assert times.shape[0] == self._batch_size
 
         points_c_array = numpy.ctypeslib.as_ctypes(points)
-        embeddings_c_array = numpy.ctypeslib.as_ctypes(embeddings)
+        times_c_array = numpy.ctypeslib.as_ctypes(times)
         targets_c_array = numpy.ctypeslib.as_ctypes(targets)
         _LIB.loader_next_batch(
             self._ptr,
             ctypes.cast(points_c_array, ctypes.POINTER(ctypes.c_float)),
-            ctypes.cast(embeddings_c_array, ctypes.POINTER(ctypes.c_float)),
+            ctypes.cast(times_c_array, ctypes.POINTER(ctypes.c_float)),
             ctypes.cast(targets_c_array, ctypes.POINTER(ctypes.c_float)),
         )
 
